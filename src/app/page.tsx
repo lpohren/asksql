@@ -8,15 +8,19 @@ import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-sql";
 import "prismjs/themes/prism-dark.css";
 import { useState } from "react";
+import { useCompletion } from "ai/react";
 
 export default function Home() {
-  const [code, setCode] = useState(`create table if not exists users (
-    id uuid primary key not null default gen_random_uuid(),
-    "name" text not null,
-    handle text not null,
-    created_at timestamp not null default now(),
-    updated_at timestamp not null default now()
-  );`);
+  const [schema, setSchema] = useState("");
+
+  const { completion, handleSubmit, input, handleInputChange } = useCompletion({
+    api: "/api/generate-sql",
+    body: {
+      schema,
+    },
+  });
+
+  const result = completion;
 
   return (
     <div className="max-w-[430px] mx-auto h-screen px-4 pt-12 pb-4">
@@ -27,25 +31,31 @@ export default function Home() {
         </button>
       </header>
 
-      <Editor
-        value={code}
-        onValueChange={(test) => setCode(test)}
-        highlight={(code) => highlight(code, languages.sql, "sql")}
-        padding={16}
-        textareaClassName="outline-none"
-        className="my-4 h-40 bg-blueberry-600 border border-blueberry-300 rounded-md px-4 py-3 focus-within:ring-2 focus-within:ring-lime-600"
-      />
-
-      <form className="py-8 flex flex-col w-full">
+      <form className="py-8 flex flex-col w-full" onSubmit={handleSubmit}>
         <label className="text-lg font-light">Paste your SQL code here:</label>
 
+        <div className="font-mono h-40 overflow-y-scroll my-4 bg-blueberry-600 border border-blueberry-300 rounded-md focus-within:ring-2 focus-within:ring-lime-600">
+          <Editor
+            textareaId="schema"
+            value={schema}
+            onValueChange={(test) => setSchema(test)}
+            highlight={(code) => highlight(code, languages.sql, "sql")}
+            padding={16}
+            style={{ overflowY: "scroll" }}
+            textareaClassName="outline-none"
+            className="min-h-full"
+          />
+        </div>
+
         <label htmlFor="question" className="text-lg font-light">
-          Make a questions about the code:
+          Make a question about the code:
         </label>
         <textarea
           className="my-4 bg-blueberry-600 border border-blueberry-300 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-lime-600"
           name="question"
           id="question"
+          onChange={handleInputChange}
+          value={input}
         />
 
         <button
@@ -58,13 +68,19 @@ export default function Home() {
       </form>
 
       <div className="mt-6">
-        <span className="text-lg font-light">Response</span>
-        <textarea
-          readOnly
-          className="w-full my-4 bg-transparent border border-blueberry-300 rounded-md px-4 py-3 outline-none focus:ring-2 focus:ring-lime-600"
-          name="question"
-          id="question"
-        />
+        <span className="text-lg font-light">Result</span>
+        <div className="font-mono h-40 overflow-y-scroll my-4 bg-blueberry-600 border border-blueberry-300 rounded-md focus-within:ring-2 focus-within:ring-lime-600">
+          <Editor
+            readOnly
+            value={result}
+            onValueChange={() => {}}
+            highlight={(code) => highlight(code, languages.sql, "sql")}
+            padding={16}
+            style={{ overflowY: "scroll" }}
+            textareaClassName="outline-none"
+            className="min-h-full"
+          />
+        </div>
       </div>
     </div>
   );
